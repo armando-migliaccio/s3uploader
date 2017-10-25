@@ -1,0 +1,67 @@
+# Licensed under the Apache License, Version 2.0 (the "License"); you may
+# not use this file except in compliance with the License. You may obtain
+# a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+# License for the specific language governing permissions and limitations
+# under the License.
+
+import flask
+import flask_restful
+
+from s3uploader import constants
+
+
+app = flask.Flask(__name__)
+LOG = app.logger
+
+
+class Asset(flask_restful.Resource):
+
+    def get(self, asset_id):
+        """Return an S3 signed URL for dowload of a given asset.
+
+        :returns: 400 if the timeout is not a positive integer.
+        :returns: 409 if the asset is not ready for download.
+
+        """
+        timeout = flask.request.args.get('timeout', constants.DOWNLOAD_TIMEOUT)
+        try:
+            timeout = int(timeout)
+            if timeout <= 0:
+                raise ValueError()
+        except ValueError:
+            LOG.error('Timeout cannot be parsed: %s', timeout)
+            return 'timeout must be a positive integer', 400
+
+        s3_signed_url = None
+        response = {
+            'download_url': s3_signed_url,
+        }
+        return response
+
+    def put(self, asset_id):
+        """Mark an asset upload operation as completed."""
+        content = flask.request.get_json(force=True)
+        # could use Flask-inputs but it's more hassle than it's
+        # worth for the simplicity of the app.
+        if 'Status' not in content:
+            return 'Body must contain "Status" key', 400
+        return {'hello': content}
+
+
+class Assets(flask_restful.Resource):
+
+    def post(self):
+        """Return an S3 signed URL for uploading a new asset."""
+        s3_signed_url = None
+        asset_id = None
+        response = {
+            'upload_url': s3_signed_url,
+            'id': asset_id,
+        }
+        return response
