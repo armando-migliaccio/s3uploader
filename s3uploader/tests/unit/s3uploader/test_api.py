@@ -10,10 +10,12 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import mock
 from oslo_serialization import jsonutils
 import testtools
 
-from s3uploader.cmds.api import app
+from s3uploader.cmds.service import app
+from s3uploader import s3
 
 
 class TestS3Uploader(testtools.TestCase):
@@ -21,6 +23,10 @@ class TestS3Uploader(testtools.TestCase):
     def setUp(self):
         super(TestS3Uploader, self).setUp()
         self.app = app.test_client()
+        self.manager_patch = mock.patch(
+            's3uploader.s3.AssetManager', autospec=True).start()
+        self.manager = self.manager_patch.return_value
+        self.addCleanup(mock.patch.stopall)
 
     def test_asset_post(self):
         response = self.app.post('/asset')
@@ -35,6 +41,7 @@ class TestS3Uploader(testtools.TestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_asset_get(self):
+        self.manager.get_asset.return_value = s3.Asset('foo_url')
         response = self.app.get('/asset/foo123')
         self.assertEqual(response.status_code, 200)
         response_body = jsonutils.loads(response.get_data())
