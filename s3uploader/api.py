@@ -73,6 +73,7 @@ class Asset(flask_restful.Resource):
 
         asset_manager = s3.AssetManager()
         asset_manager.update_asset(asset_id)
+        return 'done'
 
 
 class Assets(flask_restful.Resource):

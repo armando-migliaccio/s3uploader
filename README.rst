@@ -19,7 +19,11 @@ AWS dependencies
 
 The S3 uploader interfaces with...S3. For that reason, make sure you know
 how to provision your AWS credentials to be able to have the asset uploader
-to talk to S3.
+to talk to S3. It is important that the credentials used to access S3 have
+enough permissions to allow the S3 uploader to work correctly. As the S3
+uploader uses tagging to mark assets available for download (to avoid
+depending on external storage), ensure that the following policies are
+ellowed: GetObjectTagging, PutObjectTagging.
 
 Kicking the tires
 -----------------

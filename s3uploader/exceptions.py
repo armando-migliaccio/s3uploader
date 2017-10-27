@@ -23,7 +23,15 @@ class AssetError(exceptions.HTTPException):
 
 class AssetNotFoundError(exceptions.HTTPException):
     code = 404
-    description = 'asset cannot be found'
+    description = 'asset cannot be found, check asset ID'
 
     def __init__(self):
         super(AssetNotFoundError, self).__init__()
+
+
+class AssetAccessDeniedError(exceptions.HTTPException):
+    code = 401
+    description = 'asset cannot be accessed, check permissions'
+
+    def __init__(self):
+        super(AssetAccessDeniedError, self).__init__()

@@ -15,8 +15,13 @@ import uuid
 
 import boto3
 from botocore import exceptions as boto_exc
+import flask
 
 from s3uploader import exceptions
+
+
+app = flask.Flask(__name__)
+LOG = app.logger
 
 
 class Config(object):
@@ -100,11 +105,14 @@ class S3Manager(object):
                     ]
                 })
         except boto_exc.ClientError as e:
-            if ('Error' in e.response and
-                    e.response['Error']['Code'] == 'NoSuchKey'):
+            LOG.error(e)
+            if 'Error' in e.response:
+                raise ERROR_MAP.get(e.response['Error']['Code'],
+                                    exceptions.AssetNotFoundError())
                 raise exceptions.AssetNotFoundError()
             raise exceptions.AssetError()
-        except boto_exc.BotoCoreError:
+        except boto_exc.BotoCoreError as e:
+            LOG.error(e)
             raise exceptions.AssetError()
 
     def get_url_for_download(self, asset_id, timeout):
@@ -135,9 +143,17 @@ class S3Manager(object):
                 ExpiresIn=timeout,
                 HttpMethod='GET')
         except boto_exc.ClientError as e:
-            if ('Error' in e.response and
-                    e.response['Error']['Code'] == 'NoSuchKey'):
-                raise exceptions.AssetNotFoundError()
+            LOG.error(e)
+            if 'Error' in e.response:
+                raise ERROR_MAP.get(e.response['Error']['Code'],
+                                    exceptions.AssetNotFoundError())
             raise exceptions.AssetError()
-        except boto_exc.BotoCoreError:
+        except boto_exc.BotoCoreError as e:
+            LOG.error(e)
             raise exceptions.AssetError()
+
+
+ERROR_MAP = {
+    'NoSuchKey': exceptions.AssetNotFoundError,
+    'AccessDenied': exceptions.AssetAccessDeniedError
+}
