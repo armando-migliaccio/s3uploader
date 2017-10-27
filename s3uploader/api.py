@@ -14,11 +14,18 @@ import flask
 import flask_restful
 
 from s3uploader import constants
+from s3uploader import exceptions
 from s3uploader import s3
 
 
 app = flask.Flask(__name__)
 LOG = app.logger
+
+
+@app.errorhandler(exceptions.AssetError)
+def special_exception_handler(error):
+    LOG.error(error)
+    return 'ouch, something went wrong, please try later!', 500
 
 
 class Asset(flask_restful.Resource):
@@ -27,6 +34,7 @@ class Asset(flask_restful.Resource):
         """Return an S3 signed URL for dowload of a given asset.
 
         :returns: 400 if the timeout is not a positive integer.
+        :returns: 404 if the asset cannot be found.
         :returns: 409 if the asset is not ready for download.
 
         """
@@ -44,9 +52,12 @@ class Asset(flask_restful.Resource):
 
         asset_manager = s3.AssetManager()
         asset = asset_manager.get_asset(asset_id, timeout)
-        return {
-            'download_url': asset.url,
-        }
+        if asset and asset.url:
+            return {'download_url': asset.url}
+        elif asset and not asset.url:
+            return 'asset is not ready for download', 409
+        else:
+            return 'asset cannot be found', 404
 
     def put(self, asset_id):
         """Mark an asset upload operation as completed."""
@@ -56,7 +67,9 @@ class Asset(flask_restful.Resource):
         if 'Status' not in content:
             # TODO(armax): return messages should be localized
             return 'Body must contain "Status" key', 400
-        return {'hello': content}
+        asset_manager = s3.AssetManager()
+        asset_manager.update_asset(asset_id)
+        return 'done'
 
 
 class Assets(flask_restful.Resource):

@@ -14,6 +14,9 @@ import os
 import uuid
 
 import boto3
+from botocore import exceptions as boto_exc
+
+from s3uploader import exceptions
 
 
 class Config(object):
@@ -40,11 +43,11 @@ class AssetManager(object):
 
     def create_asset(self):
         asset_id = self._generate_uuid()
-        url = self.manager.get_url_for_upload(asset_id)
+        url = self.storage_manager.get_url_for_upload(asset_id)
         return Asset(url, asset_id)
 
     def update_asset(self, asset_id):
-        self.manager.update_upload_status(asset_id)
+        self.storage_manager.update_upload_status(asset_id)
 
     def get_asset(self, asset_id, timeout):
         url = self.storage_manager.get_url_for_download(asset_id, timeout)
@@ -68,14 +71,45 @@ class S3Manager(object):
         pass
 
     def update_upload_status(self, asset_id):
-        pass
+        try:
+            self.client.put_object_tagging(
+                Bucket=self.config.bucket,
+                Key=asset_id,
+                Tagging={
+                    'TagSet': [
+                        {'Key': 'Status', 'Value': 'Uploaded'}
+                    ]
+                })
+        except boto_exc.BotoCoreError as e:
+            # FIXME(armax): narrow down this failure
+            raise exceptions.AssetError(e)
 
     def get_url_for_download(self, asset_id, timeout):
-        return self.client.generate_presigned_url(
-            ClientMethod='get_object',
-            Params={
-                'Bucket': self.config.bucket,
-                'Key': asset_id
-            },
-            ExpiresIn=timeout,
-            HttpMethod='GET')
+        try:
+            # check if this is marked uploaded
+            tags = self.client.get_object_tagging(
+                Bucket=self.config.bucket,
+                Key=asset_id)
+            if tags:
+                uploaded = False
+                for tag in tags['TagSet']:
+                    key = tag.get('Key')
+                    value = tag.get('Value')
+                    if key == 'Status' and value == 'Uploaded':
+                        uploaded = True
+                        break
+            if not uploaded:
+                return
+
+            # if so, then return URL for download
+            return self.client.generate_presigned_url(
+                ClientMethod='get_object',
+                Params={
+                    'Bucket': self.config.bucket,
+                    'Key': asset_id
+                },
+                ExpiresIn=timeout,
+                HttpMethod='GET')
+        except boto_exc.BotoCoreError as e:
+            # FIXME(armax): narrow down this failure
+            raise exceptions.AssetError(e)

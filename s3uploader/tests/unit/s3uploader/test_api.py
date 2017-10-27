@@ -15,6 +15,7 @@ from oslo_serialization import jsonutils
 import testtools
 
 from s3uploader.cmds.service import app
+from s3uploader import exceptions
 from s3uploader import s3
 
 
@@ -47,11 +48,32 @@ class TestS3Uploader(testtools.TestCase):
         response_body = jsonutils.loads(response.get_data())
         self.assertIn('download_url', response_body)
 
+    def test_asset_get_not_ready(self):
+        self.manager.get_asset.return_value = s3.Asset(None)
+        response = self.app.get('/asset/foo123')
+        self.assertEqual(response.status_code, 409)
 
-class TestS3UploaderNegative(testtools.TestCase):
+    def test_asset_get_not_found(self):
+        self.manager.get_asset.return_value = None
+        response = self.app.get('/asset/foo123')
+        self.assertEqual(response.status_code, 404)
+
+    def test_asset_get_backend_failure(self):
+        self.manager.get_asset.side_effect = exceptions.AssetError()
+        response = self.app.get('/asset/foo123')
+        self.assertEqual(response.status_code, 500)
+
+    def test_asset_put_backend_failure(self):
+        self.manager.update_asset.side_effect = exceptions.AssetError()
+        response = self.app.put('/asset/foo123',
+                                data=jsonutils.dumps(dict(Status='uploaded')))
+        self.assertEqual(response.status_code, 500)
+
+
+class TestS3UploaderNegativeInputs(testtools.TestCase):
 
     def setUp(self):
-        super(TestS3UploaderNegative, self).setUp()
+        super(TestS3UploaderNegativeInputs, self).setUp()
         self.app = app.test_client()
 
     def test_asset_post_wrong_prefix(self):
@@ -63,6 +85,6 @@ class TestS3UploaderNegative(testtools.TestCase):
                                 data=jsonutils.dumps(dict(Stotus='uploaded')))
         self.assertEqual(response.status_code, 400)
 
-    def test_asset_get(self):
+    def test_asset_get_invalid_timeout(self):
         response = self.app.get('/asset/foo123?timeout=0')
         self.assertEqual(response.status_code, 400)
