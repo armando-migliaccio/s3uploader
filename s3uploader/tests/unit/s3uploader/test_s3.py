@@ -10,9 +10,11 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+from botocore import exceptions as boto_exc
 import mock
 import testtools
 
+from s3uploader import exceptions
 from s3uploader import s3
 
 
@@ -50,7 +52,8 @@ class TestS3Manager(testtools.TestCase):
         self.addCleanup(mock.patch.stopall)
 
     def test_get_url_for_upload(self):
-        pass
+        self.manager.get_url_for_upload('foo_asset_id')
+        self.manager.client.generate_presigned_post.assert_called_once()
 
     def test_update_upload_status(self):
         self.manager.update_upload_status('foo_asset_id')
@@ -70,3 +73,9 @@ class TestS3Manager(testtools.TestCase):
         self.manager.get_url_for_download('foo_asset_id', 50)
         self.manager.client.get_object_tagging.assert_called_once()
         self.assertFalse(self.manager.client.generate_presigned_url.call_count)
+
+    def test_get_url_for_upload_raises(self):
+        self.manager.client.generate_presigned_post.side_effect = (
+            boto_exc.BotoCoreError)
+        self.assertRaises(exceptions.AssetError,
+                          self.manager.get_url_for_upload, 'foo_asset_id')

@@ -30,6 +30,7 @@ class TestS3Uploader(testtools.TestCase):
         self.addCleanup(mock.patch.stopall)
 
     def test_asset_post(self):
+        self.manager.create_asset.return_value = s3.Asset('foo_url')
         response = self.app.post('/asset')
         self.assertEqual(response.status_code, 200)
         response_body = jsonutils.loads(response.get_data())
@@ -67,6 +68,16 @@ class TestS3Uploader(testtools.TestCase):
         self.manager.update_asset.side_effect = exceptions.AssetError()
         response = self.app.put('/asset/foo123',
                                 data=jsonutils.dumps(dict(Status='Uploaded')))
+        self.assertEqual(response.status_code, 500)
+
+    def test_asset_post_backend_failure(self):
+        self.manager.create_asset.side_effect = exceptions.AssetError()
+        response = self.app.post('/asset')
+        self.assertEqual(response.status_code, 500)
+
+    def test_asset_post_backend_failure_none_asset(self):
+        self.manager.create_asset.return_value = None
+        response = self.app.post('/asset')
         self.assertEqual(response.status_code, 500)
 
 

@@ -78,10 +78,9 @@ class Assets(flask_restful.Resource):
 
     def post(self):
         """Return an S3 signed URL for uploading a new asset."""
-        s3_signed_url = None
-        asset_id = None
-        response = {
-            'upload_url': s3_signed_url,
-            'id': asset_id,
-        }
-        return response
+        asset_manager = s3.AssetManager()
+        asset = asset_manager.create_asset()
+        if asset and asset.url:
+            return {'upload_url': asset.url, 'id': asset.asset_id}
+        else:
+            return 'ouch, something went wrong, please try later!', 500

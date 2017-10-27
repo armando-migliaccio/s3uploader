@@ -68,9 +68,28 @@ class S3Manager(object):
             region_name=self.config.region)
 
     def get_url_for_upload(self, asset_id):
-        pass
+        """Return data to allow clients to upload an S3 object."""
+        # NOTE(armax): presigned POSTs are more convoluted than presigned
+        # PUTs, and allow more control over the transfer of the user content
+        # to the S3 object. This method of generating the presigned POST is
+        # barebone and would allow a web client to post content like this:
+        #
+        # import requests
+        #
+        # myfile = {"file": "file_content"}
+        # response = requests.post(
+        #     post["url"], data=post["fields"], files=myfiles)
+        #
+        try:
+            return self.client.generate_presigned_post(
+                Bucket=self.config.bucket,
+                Key=asset_id)
+        except boto_exc.BotoCoreError as e:
+            # FIXME(armax): narrow down this failure
+            raise exceptions.AssetError(e)
 
     def update_upload_status(self, asset_id):
+        """Mark the S3 object's upload completed."""
         try:
             self.client.put_object_tagging(
                 Bucket=self.config.bucket,
@@ -85,6 +104,7 @@ class S3Manager(object):
             raise exceptions.AssetError(e)
 
     def get_url_for_download(self, asset_id, timeout):
+        """Return URL for download if the asset is ready, None otherwise."""
         try:
             # check if this is marked uploaded
             tags = self.client.get_object_tagging(
