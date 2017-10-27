@@ -38,7 +38,7 @@ class TestS3Uploader(testtools.TestCase):
 
     def test_asset_put(self):
         response = self.app.put('/asset/foo123',
-                                data=jsonutils.dumps(dict(Status='uploaded')))
+                                data=jsonutils.dumps(dict(Status='Uploaded')))
         self.assertEqual(response.status_code, 200)
 
     def test_asset_get(self):
@@ -66,7 +66,7 @@ class TestS3Uploader(testtools.TestCase):
     def test_asset_put_backend_failure(self):
         self.manager.update_asset.side_effect = exceptions.AssetError()
         response = self.app.put('/asset/foo123',
-                                data=jsonutils.dumps(dict(Status='uploaded')))
+                                data=jsonutils.dumps(dict(Status='Uploaded')))
         self.assertEqual(response.status_code, 500)
 
 
@@ -83,6 +83,11 @@ class TestS3UploaderNegativeInputs(testtools.TestCase):
     def test_asset_put_bad_input(self):
         response = self.app.put('/asset/foo123',
                                 data=jsonutils.dumps(dict(Stotus='uploaded')))
+        self.assertEqual(response.status_code, 400)
+
+    def test_asset_put_bad_input_uploaded(self):
+        response = self.app.put('/asset/foo123',
+                                data=jsonutils.dumps(dict(Status='Aploaded')))
         self.assertEqual(response.status_code, 400)
 
     def test_asset_get_invalid_timeout(self):

@@ -67,6 +67,8 @@ class Asset(flask_restful.Resource):
         if 'Status' not in content:
             # TODO(armax): return messages should be localized
             return 'Body must contain "Status" key', 400
+        elif content['Status'] != 'Uploaded':
+            return 'Status can only accept "Uploaded"', 400
         asset_manager = s3.AssetManager()
         asset_manager.update_asset(asset_id)
         return 'done'
