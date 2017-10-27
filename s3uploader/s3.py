@@ -59,9 +59,9 @@ class AssetManager(object):
 
 class S3Manager(object):
 
-    def __init__(self, config=None):
+    def __init__(self, config=None, client=None):
         self.config = config or Config()
-        self.client = boto3.client(
+        self.client = client or boto3.client(
             's3',
             aws_access_key_id=self.config.access_key_id,
             aws_secret_access_key=self.config.access_key,
@@ -90,8 +90,8 @@ class S3Manager(object):
             tags = self.client.get_object_tagging(
                 Bucket=self.config.bucket,
                 Key=asset_id)
+            uploaded = False
             if tags:
-                uploaded = False
                 for tag in tags['TagSet']:
                     key = tag.get('Key')
                     value = tag.get('Value')
