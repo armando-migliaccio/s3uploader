@@ -52,6 +52,10 @@ You can unit test coverage with:
 
 ``tox -ecover``
 
+To look for potential security issues, run:
+
+``tox -ebandit``
+
 
 Deployment considerations
 -------------------------
