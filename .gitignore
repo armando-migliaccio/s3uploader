@@ -20,7 +20,7 @@ pip-log.txt
 
 # Unit test / coverage reports
 cover/
-.coverage
+.coverage*
 .tox
 nosetests.xml
 .testrepository

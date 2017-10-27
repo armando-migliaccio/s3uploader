@@ -26,4 +26,4 @@ app.register_blueprint(api_blueprint)
 
 
 def main():
-    app.run()
+    app.run(debug=False)

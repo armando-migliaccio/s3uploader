@@ -84,9 +84,9 @@ class S3Manager(object):
             return self.client.generate_presigned_post(
                 Bucket=self.config.bucket,
                 Key=asset_id)
-        except boto_exc.BotoCoreError as e:
-            # FIXME(armax): narrow down this failure
-            raise exceptions.AssetError(e)
+        except boto_exc.BotoCoreError:
+            # FIXME(armax): narrow down the catch
+            raise exceptions.AssetError()
 
     def update_upload_status(self, asset_id):
         """Mark the S3 object's upload completed."""
@@ -99,9 +99,13 @@ class S3Manager(object):
                         {'Key': 'Status', 'Value': 'Uploaded'}
                     ]
                 })
-        except boto_exc.BotoCoreError as e:
-            # FIXME(armax): narrow down this failure
-            raise exceptions.AssetError(e)
+        except boto_exc.ClientError as e:
+            if ('Error' in e.response and
+                    e.response['Error']['Code'] == 'NoSuchKey'):
+                raise exceptions.AssetNotFoundError()
+            raise exceptions.AssetError()
+        except boto_exc.BotoCoreError:
+            raise exceptions.AssetError()
 
     def get_url_for_download(self, asset_id, timeout):
         """Return URL for download if the asset is ready, None otherwise."""
@@ -130,6 +134,10 @@ class S3Manager(object):
                 },
                 ExpiresIn=timeout,
                 HttpMethod='GET')
-        except boto_exc.BotoCoreError as e:
-            # FIXME(armax): narrow down this failure
-            raise exceptions.AssetError(e)
+        except boto_exc.ClientError as e:
+            if ('Error' in e.response and
+                    e.response['Error']['Code'] == 'NoSuchKey'):
+                raise exceptions.AssetNotFoundError()
+            raise exceptions.AssetError()
+        except boto_exc.BotoCoreError:
+            raise exceptions.AssetError()

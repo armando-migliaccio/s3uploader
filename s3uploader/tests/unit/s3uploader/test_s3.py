@@ -59,6 +59,15 @@ class TestS3Manager(testtools.TestCase):
         self.manager.update_upload_status('foo_asset_id')
         self.manager.client.put_object_tagging.assert_called_once()
 
+    def test_update_upload_status_raise_not_found(self):
+        exc = boto_exc.ClientError(
+            error_response={}, operation_name='foo')
+        exc.response['Error'] = {'Code': 'NoSuchKey'}
+        self.manager.client.put_object_tagging.side_effect = exc
+        self.assertRaises(
+            exceptions.AssetNotFoundError,
+            self.manager.update_upload_status, 'foo_asset_id')
+
     def test_get_url_for_download_ready_for_download(self):
         self.manager.client.get_object_tagging.return_value = (
             {'TagSet': [{'Key': 'Status', 'Value': 'Uploaded'}]})
@@ -74,8 +83,23 @@ class TestS3Manager(testtools.TestCase):
         self.manager.client.get_object_tagging.assert_called_once()
         self.assertFalse(self.manager.client.generate_presigned_url.call_count)
 
+    def test_get_url_for_download_not_found(self):
+        exc = boto_exc.ClientError(
+            error_response={}, operation_name='foo')
+        exc.response['Error'] = {'Code': 'NoSuchKey'}
+        self.manager.client.get_object_tagging.side_effect = exc
+        self.assertRaises(
+            exceptions.AssetNotFoundError,
+            self.manager.get_url_for_download, 'foo_asset_id', 50)
+
     def test_get_url_for_upload_raises(self):
         self.manager.client.generate_presigned_post.side_effect = (
             boto_exc.BotoCoreError)
         self.assertRaises(exceptions.AssetError,
                           self.manager.get_url_for_upload, 'foo_asset_id')
+
+    def test_update_upload_status_raises(self):
+        self.manager.client.put_object_tagging.side_effect = (
+            boto_exc.ClientError(error_response={}, operation_name='foo'))
+        self.assertRaises(exceptions.AssetError,
+                          self.manager.update_upload_status, 'foo_asset_id')

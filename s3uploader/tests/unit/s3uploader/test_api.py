@@ -55,8 +55,14 @@ class TestS3Uploader(testtools.TestCase):
         self.assertEqual(response.status_code, 409)
 
     def test_asset_get_not_found(self):
-        self.manager.get_asset.return_value = None
+        self.manager.get_asset.side_effect = exceptions.AssetNotFoundError()
         response = self.app.get('/asset/foo123')
+        self.assertEqual(response.status_code, 404)
+
+    def test_asset_put_not_found(self):
+        self.manager.update_asset.side_effect = exceptions.AssetNotFoundError()
+        response = self.app.put('/asset/foo123',
+                                data=jsonutils.dumps(dict(Status='Uploaded')))
         self.assertEqual(response.status_code, 404)
 
     def test_asset_get_backend_failure(self):

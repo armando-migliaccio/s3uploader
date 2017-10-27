@@ -22,10 +22,10 @@ app = flask.Flask(__name__)
 LOG = app.logger
 
 
-@app.errorhandler(exceptions.AssetError)
-def special_exception_handler(error):
-    LOG.error(error)
-    return 'ouch, something went wrong, please try later!', 500
+@app.errorhandler(404)
+@app.errorhandler(500)
+def error_handler(error):
+    pass
 
 
 class Asset(flask_restful.Resource):
@@ -34,7 +34,6 @@ class Asset(flask_restful.Resource):
         """Return an S3 signed URL for dowload of a given asset.
 
         :returns: 400 if the timeout is not a positive integer.
-        :returns: 404 if the asset cannot be found.
         :returns: 409 if the asset is not ready for download.
 
         """
@@ -54,13 +53,15 @@ class Asset(flask_restful.Resource):
         asset = asset_manager.get_asset(asset_id, timeout)
         if asset and asset.url:
             return {'download_url': asset.url}
-        elif asset and not asset.url:
+        elif not asset.url:
             return 'asset is not ready for download', 409
-        else:
-            return 'asset cannot be found', 404
 
     def put(self, asset_id):
-        """Mark an asset upload operation as completed."""
+        """Mark an asset upload operation as completed.
+
+        :returns: 400 if the timeout is not a positive integer.
+
+        """
         content = flask.request.get_json(force=True)
         # TODO(armax): could use Flask-inputs but it's more hassle
         # than it's worth for the simplicity of the app.
@@ -69,9 +70,9 @@ class Asset(flask_restful.Resource):
             return 'Body must contain "Status" key', 400
         elif content['Status'] != 'Uploaded':
             return 'Status can only accept "Uploaded"', 400
+
         asset_manager = s3.AssetManager()
         asset_manager.update_asset(asset_id)
-        return 'done'
 
 
 class Assets(flask_restful.Resource):
@@ -80,7 +81,8 @@ class Assets(flask_restful.Resource):
         """Return an S3 signed URL for uploading a new asset."""
         asset_manager = s3.AssetManager()
         asset = asset_manager.create_asset()
+
         if asset and asset.url:
             return {'upload_url': asset.url, 'id': asset.asset_id}
         else:
-            return 'ouch, something went wrong, please try later!', 500
+            raise exceptions.AssetError()

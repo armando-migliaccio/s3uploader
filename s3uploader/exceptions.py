@@ -10,11 +10,20 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+from werkzeug import exceptions
 
-class AssetError(Exception):
 
-    def __init__(self, inner_error=None):
-        self.inner_error = inner_error
+class AssetError(exceptions.HTTPException):
+    code = 500
+    description = 'ouch, something went wrong, please try later'
 
-    def __str__(self):
-        return str(self.inner_error)
+    def __init__(self):
+        super(AssetError, self).__init__()
+
+
+class AssetNotFoundError(exceptions.HTTPException):
+    code = 404
+    description = 'asset cannot be found'
+
+    def __init__(self):
+        super(AssetNotFoundError, self).__init__()
