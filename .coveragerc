@@ -1,0 +1,7 @@
+[run]
+branch = True
+source = s3uploader
+omit = s3uploader/tests/*
+
+[report]
+ignore_errors = True

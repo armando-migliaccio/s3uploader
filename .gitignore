@@ -19,8 +19,12 @@ __pycache__
 pip-log.txt
 
 # Unit test / coverage reports
+cover/
 .coverage
 .tox
 nosetests.xml
 .testrepository
 .venv
+!/.coveragerc
+!/.gitignore
+!/.testr.conf

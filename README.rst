@@ -48,6 +48,11 @@ You can run pep8 validation with:
 
 ``tox -epep8``
 
+You can unit test coverage with:
+
+``tox -ecover``
+
+
 Deployment considerations
 -------------------------
 
