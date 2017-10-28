@@ -68,6 +68,5 @@ To deploy in production, check out:
 
 ``http://flask.pocoo.org/docs/0.12/deploying/``
 
-This application is designed to be multiprocess. For more details check out
-the `modwsgi guide <http://modwsgi.readthedocs.io/en/develop/user-guides/processes-and-threading.html>`_ on
-processes and threading.
+For more details on multiprocessing and threading considerations, please read the
+`modwsgi guide <http://modwsgi.readthedocs.io/en/develop/user-guides/processes-and-threading.html>`_.
