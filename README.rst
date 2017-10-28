@@ -23,7 +23,7 @@ to talk to S3. It is important that the credentials used to access S3 have
 enough permissions to allow the S3 uploader to work correctly. As the S3
 uploader uses tagging to mark assets available for download (to avoid
 depending on external storage), ensure that the following policies are
-ellowed: GetObjectTagging, PutObjectTagging.
+allowed: GetObjectTagging, PutObjectTagging.
 
 Kicking the tires
 -----------------
