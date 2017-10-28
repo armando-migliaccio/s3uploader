@@ -108,7 +108,7 @@ class S3Manager(object):
             LOG.error(e)
             if 'Error' in e.response:
                 raise ERROR_MAP.get(e.response['Error']['Code'],
-                                    exceptions.AssetNotFoundError())
+                                    exceptions.AssetError())
                 raise exceptions.AssetNotFoundError()
             raise exceptions.AssetError()
         except boto_exc.BotoCoreError as e:
@@ -146,7 +146,7 @@ class S3Manager(object):
             LOG.error(e)
             if 'Error' in e.response:
                 raise ERROR_MAP.get(e.response['Error']['Code'],
-                                    exceptions.AssetNotFoundError())
+                                    exceptions.AssetError())
             raise exceptions.AssetError()
         except boto_exc.BotoCoreError as e:
             LOG.error(e)

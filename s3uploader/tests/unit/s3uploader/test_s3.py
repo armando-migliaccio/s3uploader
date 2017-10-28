@@ -92,6 +92,15 @@ class TestS3Manager(testtools.TestCase):
             exceptions.AssetNotFoundError,
             self.manager.get_url_for_download, 'foo_asset_id', 50)
 
+    def test_get_url_for_download_unknown_error(self):
+        exc = boto_exc.ClientError(
+            error_response={}, operation_name='foo')
+        exc.response['Error'] = {'Code': 'UncaughtError'}
+        self.manager.client.get_object_tagging.side_effect = exc
+        self.assertRaises(
+            exceptions.AssetError,
+            self.manager.get_url_for_download, 'foo_asset_id', 50)
+
     def test_get_url_for_upload_raises(self):
         self.manager.client.generate_presigned_post.side_effect = (
             boto_exc.BotoCoreError)
